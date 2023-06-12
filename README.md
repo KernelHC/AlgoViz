@@ -18,6 +18,11 @@ Running the project
 
  
 # Examples
-<img width="600" alt="Screenshot2" src="https://user-images.githubusercontent.com/101997033/219931270-f50c084e-9ee8-4d66-9be0-ad84384210ea.png">
 
-<img width="600" alt="Screenshot4" src="https://user-images.githubusercontent.com/101997033/219931304-4c04b762-f768-42a4-8bc6-8a01290f5454.png">
+![add_nodes_and_edges](https://user-images.githubusercontent.com/101997033/236842620-8636b310-d653-4509-a0cf-30426dd7edbc.gif)
+
+
+![move_nodes_around](https://user-images.githubusercontent.com/101997033/236842838-64d14f1f-8813-43e5-a6e0-fc6e5737dd51.gif)
+
+
+![run_bfs_dfs](https://user-images.githubusercontent.com/101997033/236842896-f9710581-c50a-444e-81bf-18ef32e10ced.gif)
