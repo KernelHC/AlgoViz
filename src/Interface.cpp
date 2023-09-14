@@ -217,10 +217,6 @@ std::string InputBox::getInput(sf::RenderWindow& window) {
 }
 
 
-void OutputBox::render(sf::RenderWindow &window, const std::string &txt) {
-    TextBox::render(window, txt);
-}
-
 char InputBox::unicodeToAscii(unsigned int uni_char) {
     if (uni_char <= 25) {
         return (char)('a' + uni_char);

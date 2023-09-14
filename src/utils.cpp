@@ -55,7 +55,7 @@ std::vector<float> getClosestNonCollision(float node_x, float node_y, float curs
 
 
 
-void drawGrid(sf::RenderWindow& window, sf::View& view) {
+void drawGrid(sf::RenderWindow& window, sf::View& view, sf::FloatRect& gridBounds) {
     // initialize values
     int numLines = ROWS+COLS-2;
     sf::VertexArray grid(sf::Lines, 2*(numLines));
@@ -84,6 +84,7 @@ void drawGrid(sf::RenderWindow& window, sf::View& view) {
     }
     // draw it
     window.draw(grid);
+    gridBounds = {-size.x/2-660, -size.y/2-360, size.x-1110 + size.x/2-660 ,size.y-710 + size.y/2-360};
 }
 
 

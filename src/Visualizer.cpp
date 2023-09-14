@@ -73,6 +73,8 @@ Visualizer::Visualizer(const Graph& graph): graph(graph) {
     this->current_view = this->window->getView();
     this->original_view = this->window->getDefaultView();
 
+    this->grid_bounds = new sf::FloatRect();
+
     std::ifstream save_file("SavedGraphs.txt", std::ios::in);
     this->saved_graphs_list = SavedGraphsList(save_file, this->vis_font);
     save_file.close();
@@ -83,6 +85,7 @@ Visualizer::Visualizer(const Graph& graph): graph(graph) {
 Visualizer::~Visualizer() {
   delete this->window;
   delete this->vis_font;
+  delete this->grid_bounds;
 }
 
 
@@ -146,7 +149,7 @@ void Visualizer::render(bool load_list) {
     window_lock.lock();
     window->setActive(true);
     this->window->clear(BG_COLOR);
-    drawGrid((*this->window), this->original_view);
+    drawGrid((*this->window), this->original_view, *this->grid_bounds);
     this->graph.render(*this->window, this->vis_font);
     this->window->setView(this->original_view);
     this->toolbar.render(*this->window, false);
@@ -290,21 +293,21 @@ void Visualizer::runAlgorithm() {
             this->window->setActive(false);
             algo_thread = std::thread(&Graph::runBFS, std::ref(this->graph), std::ref(*this->window),
                                       std::ref(this->toolbar), std::ref(this->original_view),
-                                      std::ref(this->current_view), std::ref(this->vis_font), should_wait);
+                                      std::ref(this->current_view), std::ref(this->vis_font), std::ref(*this->grid_bounds), should_wait);
             break;
         }
         case DFS: {
             this->window->setActive(false);
             algo_thread = std::thread(&Graph::runDFS, std::ref(this->graph), std::ref(*this->window),
                                       std::ref(this->toolbar), std::ref(this->original_view),
-                                      std::ref(this->current_view), std::ref(this->vis_font), should_wait);
+                                      std::ref(this->current_view), std::ref(this->vis_font), std::ref(*this->grid_bounds), should_wait);
             break;
         }
         case DIJKSTRA: {
             this->window->setActive(false);
             algo_thread = std::thread(&Graph::runDijkstra, std::ref(this->graph), std::ref(*this->window),
                                       std::ref(this->toolbar), std::ref(this->original_view),
-                                      std::ref(this->current_view), std::ref(this->vis_font), should_wait);
+                                      std::ref(this->current_view), std::ref(this->vis_font), std::ref(*this->grid_bounds), should_wait);
             break;
         }
     }
@@ -327,9 +330,9 @@ void Visualizer::cursorRoutine() {
             current_pos = sf::Vector2f(window_x, window_y);
             delta_pos = prev_pos - current_pos; // inverted because when we "look" to the left things "move" to the right
             this->current_view.move(delta_pos / this->current_zoom_factor);
-//            if (!this->viewIsInBounds()) {
-//                this->current_view.move(-delta_pos / this->current_zoom_factor);
-//            }
+            if (!this->viewIsInBounds()) {
+                this->current_view.move(-delta_pos / this->current_zoom_factor);
+            }
             prev_pos = current_pos;
             this->render();
             this->window->waitEvent(this->sfEvent);
@@ -353,9 +356,9 @@ void Visualizer::cursorRoutine() {
             }
         }
         if (current_algo_mode == DIJKSTRA && (this->graph.getStartNode()->getState() == NODE_DONE ||
-            this->graph.getStartNode()->getState() == NODE_NEAREST)) {
+                                              this->graph.getStartNode()->getState() == NODE_NEAREST)) {
             this->graph.runDijkstra(*(this->window), this->toolbar, this->original_view,
-                                    this->current_view, this->vis_font, false);
+                                    this->current_view, this->vis_font, *grid_bounds, false);
             this->graph.setToggledNode(moving_node);
         }
         this->render();
@@ -497,15 +500,15 @@ void Visualizer::endRoutine() {
     this->graph.reset();
     if (current_algo_mode == BFS) {
         this->graph.runBFS(*this->window, this->toolbar, this->original_view,
-                           this->current_view, this->vis_font, false);
+                           this->current_view, this->vis_font, *grid_bounds, false);
     }
     else if (current_algo_mode == DFS) {
         this->graph.runDFS(*this->window, this->toolbar, this->original_view,
-                           this->current_view, this->vis_font, false);
+                           this->current_view, this->vis_font, *grid_bounds, false);
     }
     else {
         this->graph.runDijkstra(*this->window, this->toolbar, this->original_view,
-                                this->current_view, this->vis_font, false);
+                                this->current_view, this->vis_font, *grid_bounds, false);
     }
     this->toolbar.resetActiveButton();
 }
@@ -608,18 +611,22 @@ void Visualizer::loadFromFile() {
     this->toolbar.resetActiveButton();
 }
 
-void Visualizer::deleteFromFile() {
-
-}
 
 //**********************************************Auxiliary Functions***************************************************//
 
 bool Visualizer::viewIsInBounds() {
-    return
-        !(this->current_view.getCenter().x - ((float)this->window->getSize().x/this->current_zoom_factor) < -4000 ||
-        this->current_view.getCenter().x + ((float)this->window->getSize().x/this->current_zoom_factor) >  5800 ||
-        this->current_view.getCenter().y - ((float)this->window->getSize().y/this->current_zoom_factor) < -2800 ||
-        this->current_view.getCenter().y + ((float)this->window->getSize().y/this->current_zoom_factor) >  4200);
+    sf::Vector2f viewCenter = this->current_view.getCenter();
+    float viewWidth = this->current_view.getSize().x;
+    float viewHeight = this->current_view.getSize().y;
+
+// Calculate the bounds of the view
+    sf::FloatRect viewBounds(viewCenter.x - viewWidth / 2, viewCenter.y - viewHeight / 2, viewWidth, viewHeight);
+
+    if (!grid_bounds->contains(viewBounds.left, viewBounds.top) || !grid_bounds->contains(viewBounds.width + viewBounds.left, viewBounds.height + viewBounds.top)) {
+        return false;
+    }
+
+    return true;
 }
 
 

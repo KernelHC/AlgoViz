@@ -18,26 +18,22 @@ enum VisMode {
 
 class Visualizer {
 public:
+    /** Constructs a Visualizer object with an empty graph.
+     *
+     */
+    explicit Visualizer(const Graph& graph = Graph());
 
 
-/** Constructs a Visualizer object with an empty graph.
- *
- */
-explicit Visualizer(const Graph& graph = Graph());
+    /** Default destructor.
+     *
+     */
+    ~Visualizer();
 
 
-
-/** Default destructor.
- *
- */
-~Visualizer();
-
-
-
-/** Starts the main loop of the visualization tool.
- *
- */
-void run();
+    /** Starts the main loop of the visualization tool.
+     *
+     */
+    void run();
 
 
 private:
@@ -52,165 +48,130 @@ private:
     sf::Font* vis_font;
     bool node_is_clicked = false;
     float current_zoom_factor = 1.f;
+    sf::FloatRect* grid_bounds;
 
 
-    std::map<int, ButtonId> tutorial_stages {
-            {0, CURSOR}, {1, ADD_NODE}, {2, ADD_NODE}, {3, ADD_NODE}, {4, ADD_EDGE},
-            {5, ADD_EDGE}, {6, ADD_EDGE}, {7, CHANGE_START_NODE}, {8, CHOOSE_TARGET_NODE},
-            {9, RUN_BFS}, {10, CLEAR_WINDOW}
-    };
+    /** Parses the graph_literal parameter and creates Node objects for each node in the graph.
+     *
+     * Returns a vector of shared pointers to the created Node objects.
+     */
+    static std::vector<std::shared_ptr<Node>> parseNodesFromString(const std::string& graph_literal, sf::Font* font);
 
 
+    /** Parses the graph_literal parameter and creates Edge objects for each edge in the graph.
+     *
+     * Returns a vector of shared pointers to the created Edge objects.
+     */
+    static std::vector<std::shared_ptr<Edge>> parseEdgesFromString(const std::string& graph_literal,
+                                                                   std::vector<std::shared_ptr<Node>>& nodes);
+
+    /** Checks whether the current view is within the bounds of the visualization window.
+     *
+     * @return True if the current view is within the bounds of the visualization window, false otherwise.
+     */
+    bool viewIsInBounds();
 
 
-/** Parses the graph_literal parameter and creates Node objects for each node in the graph.
- *
- * Returns a vector of shared pointers to the created Node objects.
- */
-static std::vector<std::shared_ptr<Node>> parseNodesFromString(const std::string& graph_literal, sf::Font* font);
+    /** Renders the visualization of the graph.
+     *
+     * @param load_list A boolean indicating whether to load the graph from saved_graphs_list.
+     */
+    void render(bool load_list = false);
 
 
-
-/** Parses the graph_literal parameter and creates Edge objects for each edge in the graph.
- *
- * Returns a vector of shared pointers to the created Edge objects.
- */
-static std::vector<std::shared_ptr<Edge>> parseEdgesFromString(const std::string& graph_literal,
-                                                               std::vector<std::shared_ptr<Node>>& nodes);
+    /** Executes an action when a node/edge/button is clicked.
+     *
+     */
+    void executeClickAction();
 
 
-/** Checks whether the current view is within the bounds of the visualization window.
- *
- * @return True if the current view is within the bounds of the visualization window, false otherwise.
- */
-bool viewIsInBounds();
+    /** Runs the algorithm on the graph. This function applies the selected algorithm (BFS/DFS/DIJKSTRA) on the graph
+     * and updates the visualization accordingly.
+     * If no algorithm is selected, it does nothing.
+     */
+    void runAlgorithm();
 
 
-
-/** Renders the visualization of the graph.
- *
- * @param load_list A boolean indicating whether to load the graph from saved_graphs_list.
- */
-void render(bool load_list = false);
-
-
-
-/** Executes an action when a node/edge/button is clicked.
- *
- */
-void executeClickAction();
+    /** Performs the routine for the cursor, updating the position of the cursor on the screen.
+     *
+     * Helps move nodes and views around.
+     *
+     */
+    void cursorRoutine();
 
 
-
-/** Runs the algorithm on the graph. This function applies the selected algorithm (BFS/DFS/DIJKSTRA) on the graph
- * and updates the visualization accordingly.
- * If no algorithm is selected, it does nothing.
- */
-void runAlgorithm();
+    /** Adds a node to the graph and updates the graph accordingly.
+     *
+     */
+    void addNodeRoutine();
 
 
-
-/** Performs the routine for the cursor, updating the position of the cursor on the screen.
- *
- * Helps move nodes and views around.
- *
- */
-void cursorRoutine();
+    /** Adds an edge between two nodes in the graph.
+     *
+     */
+    void addEdgeRoutine();
 
 
-
-/** Adds a node to the graph and updates the graph accordingly.
- *
- */
-void addNodeRoutine();
-
+    /** Erases a node or an edge from the graph.
+     *
+     */
+    void eraseRoutine();
 
 
-/** Adds an edge between two nodes in the graph.
- *
- */
-void addEdgeRoutine();
+    /** Changes the start node of the graph.
+     *
+     */
+    void changeStartNodeRoutine();
 
 
-/** Erases a node or an edge from the graph.
- *
- */
-void eraseRoutine();
+    /** Ends the running algorithm, completing it without waiting after each step of the algorithm.
+     *
+     * It is useful for stopping a long-running algorithm prematurely.
+     *
+    */
+    void endRoutine();
 
 
-
-/** Changes the start node of the graph.
- *
- */
-void changeStartNodeRoutine();
-
+    /** Resets the current graph, clearing all algorithm-related changes, and stopping any running algorithm.
+     *
+     */
+    void resetRoutine();
 
 
-/** Ends the running algorithm, completing it without waiting after each step of the algorithm.
- *
- * It is useful for stopping a long-running algorithm prematurely.
- *
-*/
-void endRoutine();
+    /** Clears the window, creating a new empty graph, and stopping any running algorithm.
+     *
+     */
+    void clearWindowRoutine();
 
 
-
-/** Resets the current graph, clearing all algorithm-related changes, and stopping any running algorithm.
- *
- */
-void resetRoutine();
-
+    /** Chooses the target node by setting the node that is clicked on as the new target node.
+     *
+     */
+    void chooseTargetNodeRoutine();
 
 
-/** Clears the window, creating a new empty graph, and stopping any running algorithm.
- *
- */
-void clearWindowRoutine();
+    /** Unsets the current target node.
+     *
+     */
+    void removeTargetNodeRoutine();
 
 
-
-/** Chooses the target node by setting the node that is clicked on as the new target node.
- *
- */
-void chooseTargetNodeRoutine();
-
-
-
-
-/** Unsets the current target node.
- *
- */
-void removeTargetNodeRoutine();
+    /** Saves the current graph to a file. Prompts the user to input a name for the graph.
+     *
+     * The saved graph is added to the list of saved graphs and saved to a file called "SavedGraphs.txt".
+     *
+     */
+    void saveToFile();
 
 
-
-/** Saves the current graph to a file. Prompts the user to input a name for the graph.
- *
- * The saved graph is added to the list of saved graphs and saved to a file called "SavedGraphs.txt".
- *
- */
-void saveToFile();
-
-
-
-/** Loads a graph from "SavedGraphs.txt", selected by the user.
- *
- * Displays a list of saved graphs and prompts the user to select a graph. The selected graph is
- * parsed from a file called "SavedGraphs.txt" and added to the window. Any running algorithm is stopped
- * and the current graph is cleared.
- *
- */
-void loadFromFile();
-
-
-
-
-void deleteFromFile();
-
-void runTutorial();
-
-void update();
-
+    /** Loads a graph from "SavedGraphs.txt", selected by the user.
+     *
+     * Displays a list of saved graphs and prompts the user to select a graph. The selected graph is
+     * parsed from a file called "SavedGraphs.txt" and added to the window. Any running algorithm is stopped
+     * and the current graph is cleared.
+     *
+     */
+    void loadFromFile();
 
 };
 

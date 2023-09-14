@@ -244,7 +244,7 @@ void Graph::setToggledNode(std::shared_ptr<Node>& to_toggle) {
 }
 
 void Graph::runBFS(sf::RenderWindow& window, Toolbar& toolbar, sf::View& original_view, sf::View& current_view,
-                   sf::Font* font, bool wait) {
+                   sf::Font* font, sf::FloatRect& grid_bounds, bool wait) {
     algo_thread_is_running = true;
     this->untoggle();
     if (!this->start_node) return;
@@ -255,7 +255,7 @@ void Graph::runBFS(sf::RenderWindow& window, Toolbar& toolbar, sf::View& origina
     bfs_q.push(this->start_node);
     bfs_q.front()->setState(NODE_CURRENT);
     CHECK_IF_algo_thread_should_end
-    this->renderAndWait(window, toolbar, original_view, current_view, font, wait);
+    this->renderAndWait(window, toolbar, original_view, current_view, font,grid_bounds, wait);
 
     while (!bfs_q.empty()) {
         CHECK_IF_algo_thread_should_end
@@ -278,14 +278,14 @@ void Graph::runBFS(sf::RenderWindow& window, Toolbar& toolbar, sf::View& origina
                     break;
                 }
                 current_node->setState(NODE_DISCOVERED);
-                this->renderAndWait(window, toolbar, original_view, current_view, font, wait);
+                this->renderAndWait(window, toolbar, original_view, current_view, font, grid_bounds, wait);
             }
         }
         if (bfs_q.front()->getState() == NODE_TARGET) break;
         previous_node->setState(NODE_DONE);
         bfs_q.pop();
         CHECK_IF_algo_thread_should_end
-        this->renderAndWait(window, toolbar, original_view, current_view, font, wait);
+        this->renderAndWait(window, toolbar, original_view, current_view, font, grid_bounds, wait);
     }
 
     if (!bfs_q.empty()) {
@@ -297,12 +297,12 @@ void Graph::runBFS(sf::RenderWindow& window, Toolbar& toolbar, sf::View& origina
             next_edge->setState(EDGE_NEAREST);
             if (current_node->getState() != NODE_TARGET) current_node->setState(NODE_NEAREST);
             current_node = current_node->getParent();
-            this->renderAndWait(window, toolbar, original_view, current_view, font, wait);
+            this->renderAndWait(window, toolbar, original_view, current_view, font, grid_bounds, wait);
         }
         this->start_node->setState(NODE_NEAREST);
     }
 
-    this->renderAndWait(window, toolbar, original_view, current_view, font, false, false);
+    this->renderAndWait(window, toolbar, original_view, current_view, font, grid_bounds, false, false);
 
     if (wait) {
         algo_thread_is_finished = true;
@@ -312,13 +312,13 @@ void Graph::runBFS(sf::RenderWindow& window, Toolbar& toolbar, sf::View& origina
 
 
 void Graph::runDFS(sf::RenderWindow& window, Toolbar& toolbar, sf::View& original_view, sf::View& current_view,
-                   sf::Font* font, bool wait) {
+                   sf::Font* font, sf::FloatRect& grid_bounds, bool wait) {
     algo_thread_is_running = true;
     this->untoggle();
     if (!this->start_node) return;
 
-    dfs(nullptr, this->start_node, window, toolbar, original_view, current_view, font, wait);
-    this->renderAndWait(window, toolbar, original_view, current_view, font, false, false);
+    dfs(nullptr, this->start_node, window, toolbar, original_view, current_view, font, grid_bounds, wait);
+    this->renderAndWait(window, toolbar, original_view, current_view, font, grid_bounds, false, false);
 
     if (wait) {
         algo_thread_is_finished = true;
@@ -329,7 +329,7 @@ void Graph::runDFS(sf::RenderWindow& window, Toolbar& toolbar, sf::View& origina
 
 bool Graph::dfs(const std::shared_ptr<Node>& prev_node, const std::shared_ptr<Node>& curr_node,
                 sf::RenderWindow& window, Toolbar& toolbar, sf::View& original_view, sf::View& current_view,
-                sf::Font* font, bool wait) {
+                sf::Font* font, sf::FloatRect& grid_bounds, bool wait) {
     CHECK_IF_algo_thread_should_end_REC
     if (prev_node) {
         getEdgeByNodes(prev_node, curr_node)->setState(EDGE_DISCOVERED);
@@ -338,35 +338,35 @@ bool Graph::dfs(const std::shared_ptr<Node>& prev_node, const std::shared_ptr<No
 
     if (curr_node->getState() == NODE_TARGET) {
         curr_node->setParent(prev_node);
-        this->renderAndWait(window, toolbar, original_view, current_view, font, wait);
+        this->renderAndWait(window, toolbar, original_view, current_view, font, grid_bounds, wait);
         return true;
     }
 
     curr_node->setState(NODE_DISCOVERED);
-    this->renderAndWait(window, toolbar, original_view, current_view, font, wait);
+    this->renderAndWait(window, toolbar, original_view, current_view, font, grid_bounds, wait);
 
     bool found_target = false;
     for (const std::shared_ptr<Node>& neighbor_node : this->neighbors_list[curr_node->getName()]) {
         CHECK_IF_algo_thread_should_end_REC
         if (neighbor_node->getState() != NODE_DISCOVERED && neighbor_node->getState() != NODE_DONE)
-            found_target = dfs(curr_node, neighbor_node, window, toolbar, original_view, current_view, font, wait);
+            found_target = dfs(curr_node, neighbor_node, window, toolbar, original_view, current_view, font, grid_bounds, wait);
         if (found_target) {
             curr_node->setState(NODE_NEAREST);
-            this->renderAndWait(window, toolbar, original_view, current_view, font, wait);
+            this->renderAndWait(window, toolbar, original_view, current_view, font, grid_bounds, wait);
             return true;
         }
     }
 
     curr_node->setState(NODE_DONE);
     CHECK_IF_algo_thread_should_end_REC
-    this->renderAndWait(window, toolbar, original_view, current_view, font, wait);
+    this->renderAndWait(window, toolbar, original_view, current_view, font, grid_bounds, wait);
     return false;
 }
 
 
 
 void Graph::runDijkstra(sf::RenderWindow& window, Toolbar& toolbar, sf::View& original_view, sf::View& current_view,
-                        sf::Font* font, bool wait) {
+                        sf::Font* font, sf::FloatRect& grid_bounds, bool wait) {
     algo_thread_is_running = true;
 
     if (wait) this->untoggle();
@@ -386,7 +386,7 @@ void Graph::runDijkstra(sf::RenderWindow& window, Toolbar& toolbar, sf::View& or
                 discovered_edges[current_node]->setState(EDGE_DISCOVERED);
             }
             CHECK_IF_algo_thread_should_end
-            this->renderAndWait(window, toolbar, original_view, current_view, font, wait);
+            this->renderAndWait(window, toolbar, original_view, current_view, font, grid_bounds, wait);
             for (const std::shared_ptr<Node> &neighbor_node: this->neighbors_list[current_node->getName()]) {
                 // updating the distance of neighboring nodes
                 std::shared_ptr<Edge> edge = getEdgeByNodes(current_node, neighbor_node);
@@ -405,7 +405,7 @@ void Graph::runDijkstra(sf::RenderWindow& window, Toolbar& toolbar, sf::View& or
             }
             current_node->setState(NODE_DONE);
             CHECK_IF_algo_thread_should_end
-            this->renderAndWait(window, toolbar, original_view, current_view, font, wait);
+            this->renderAndWait(window, toolbar, original_view, current_view, font, grid_bounds, wait);
         }
     }
 
@@ -416,10 +416,10 @@ void Graph::runDijkstra(sf::RenderWindow& window, Toolbar& toolbar, sf::View& or
             if (current_node->getState() != NODE_TARGET) current_node->setState(NODE_NEAREST);
             if (nearest_path_edge) nearest_path_edge->setState(EDGE_NEAREST);
             current_node = current_node->getParent();
-            this->renderAndWait(window, toolbar, original_view, current_view, font, wait);
+            this->renderAndWait(window, toolbar, original_view, current_view, font, grid_bounds, wait);
         }
     }
-    this->renderAndWait(window, toolbar, original_view, current_view, font, false, false);
+    this->renderAndWait(window, toolbar, original_view, current_view, font, grid_bounds, false, false);
     if (wait) algo_thread_is_finished = true;
     algo_thread_is_running = false;
 }
@@ -457,13 +457,13 @@ void Graph::reset() {
 
 
 void Graph::renderAndWait(sf::RenderWindow& window, Toolbar& toolbar, sf::View original_view, sf::View current_view,
-                          sf::Font* font, bool wait, bool is_mid_run) {
+                          sf::Font* font, sf::FloatRect& grid_bounds, bool wait, bool is_mid_run) {
     if (!wait && is_mid_run) return;
     window_lock.lock();
     window.setActive(true);
     window.clear(BG_COLOR);
     window.setView(current_view);
-    if (!is_mid_run) drawGrid(window, original_view);
+    if (!is_mid_run) drawGrid(window, original_view, grid_bounds);
     this->render(window, font);
     window.setView(original_view);
     toolbar.render(window, is_mid_run);
